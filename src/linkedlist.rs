@@ -58,7 +58,7 @@ impl LinkedList {
     }
 
     pub fn pop_front<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
-        let index = self.start.take()?;
+        let index = self.start?;
         let node = slab.remove(index);
 
         assert!(node.prev.is_none());
