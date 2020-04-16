@@ -60,6 +60,16 @@ where
         Some(value)
     }
 
+    pub fn touch<Q>(&mut self, key: &Q) -> Option<&mut V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq
+    {
+        let index = *self.map.get(key)?;
+        let (_, value) = self.list.touch(&mut self.slab, index)?;
+        Some(value)
+    }
+
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,

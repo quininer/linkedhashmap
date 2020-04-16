@@ -102,6 +102,34 @@ impl LinkedList {
         }
     }
 
+    pub fn touch<'a, T>(&mut self, NodeSlab(slab): &'a mut NodeSlab<T>, index: usize) -> Option<&'a mut T> {
+        let (node_prev, node_next) = {
+            let node = slab.get(index)?;
+            (node.prev, node.next)
+        };
+
+        if let Some(next) = node_next {
+            slab[next].prev = node_prev;
+        } else {
+            return Some(&mut slab[index].value);
+        }
+
+        if let Some(prev) = node_prev {
+            slab[prev].next = node_next;
+        } else {
+            self.start = node_next;
+        }
+
+        let end = self.end.replace(index)?;
+        slab[end].next = Some(index);
+
+        let node = &mut slab[index];
+        node.prev = Some(end);
+        node.next.take();
+
+        Some(&mut node.value)
+    }
+
     pub fn remove<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>, index: usize) -> Option<T> {
         let node = if slab.contains(index) {
             // why not return Option :(
@@ -160,7 +188,6 @@ fn test_linkedlist() {
 
     list.push(&mut slab, 2);
     list.push(&mut slab, 3);
-    dbg!(&list);
     assert_eq!(Some(2), list.pop_front(&mut slab));
     assert_eq!(Some(3), list.pop_last(&mut slab));
     assert_eq!(None, list.pop_front(&mut slab));
@@ -182,6 +209,21 @@ fn test_linkedlist() {
     assert_eq!(Some(&8), slab.get(index8));
     assert_eq!(Some(6), list.pop_front(&mut slab));
     assert_eq!(Some(8), list.pop_front(&mut slab));
+
+    let index9 = list.push(&mut slab, 9);
+    list.push(&mut slab, 10);
+    assert_eq!(Some(&mut 9), list.touch(&mut slab, index9));
+    assert_eq!(Some(10), list.pop_front(&mut slab));
+    assert_eq!(Some(9), list.pop_front(&mut slab));
+
+    let index11 = list.push(&mut slab, 11);
+    let index12 = list.push(&mut slab, 12);
+    list.push(&mut slab, 13);
+    assert_eq!(Some(&mut 12), list.touch(&mut slab, index12));
+    assert_eq!(Some(&mut 11), list.touch(&mut slab, index11));
+    assert_eq!(Some(13), list.pop_front(&mut slab));
+    assert_eq!(Some(12), list.pop_front(&mut slab));
+    assert_eq!(Some(11), list.pop_front(&mut slab));
 
     for i in 0..32 {
         list.push(&mut slab, i);
