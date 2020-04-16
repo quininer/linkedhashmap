@@ -1,24 +1,23 @@
 use slab::Slab;
 
 
-#[derive(Debug)]
-pub struct NodeSlab<T>(pub(crate) Slab<Node<T>>);
+#[derive(Default)]
+pub struct NodeSlab<T>(Slab<Node<T>>);
 
-#[derive(Debug)]
+#[derive(Default)]
 pub struct LinkedList {
     start: Option<usize>,
     end: Option<usize>
 }
 
-#[derive(Debug)]
 pub struct Node<T> {
-    pub(crate) value: T,
+    value: T,
     prev: Option<usize>,
     next: Option<usize>
 }
 
 impl LinkedList {
-    pub fn new() -> LinkedList {
+    pub const fn new() -> LinkedList {
         LinkedList {
             start: None,
             end: None
@@ -49,7 +48,7 @@ impl LinkedList {
 
             if let Some(prev) = prev {
                 let node = &mut slab[prev];
-                assert!(node.next.is_none());
+                debug_assert!(node.next.is_none());
                 node.next = Some(index);
             }
 
@@ -61,7 +60,7 @@ impl LinkedList {
         let index = self.start?;
         let node = slab.remove(index);
 
-        assert!(node.prev.is_none());
+        debug_assert!(node.prev.is_none());
 
         self.start = if node.next == self.end {
             self.end.take()
@@ -80,7 +79,7 @@ impl LinkedList {
         if let Some(index) = self.end.take() {
             let node = slab.remove(index);
 
-            assert!(node.next.is_none());
+            debug_assert!(node.next.is_none());
 
             if let Some(index) = node.prev {
                 slab[index].next.take();
@@ -95,8 +94,8 @@ impl LinkedList {
             let index = self.start.take()?;
             let node = slab.remove(index);
 
-            assert!(node.prev.is_none());
-            assert!(node.next.is_none());
+            debug_assert!(node.prev.is_none());
+            debug_assert!(node.next.is_none());
 
             Some(node.value)
         }
@@ -155,31 +154,38 @@ impl LinkedList {
 }
 
 impl<T> NodeSlab<T> {
+    #[inline]
     pub fn new() -> NodeSlab<T> {
         NodeSlab(Slab::new())
     }
 
+    #[inline]
     pub fn with_capacity(cap: usize) -> NodeSlab<T> {
         NodeSlab(Slab::with_capacity(cap))
     }
 
+    #[inline]
     pub fn get(&self, index: usize) -> Option<&T> {
         Some(&self.0.get(index)?.value)
     }
 
+    #[inline]
     pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
         Some(&mut self.0.get_mut(index)?.value)
     }
 
+    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.0.reserve(additional);
     }
 
+    #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.0.shrink_to_fit();
     }
 
-    pub fn clear(&mut self) {
+    #[inline]
+    pub(crate) fn clear(&mut self) {
         self.0.clear();
     }
 }
