@@ -7,7 +7,7 @@ use linkedlist::{ LinkedList, NodeSlab };
 
 
 pub struct LinkedHashMap<K, V, S = RandomState> {
-    slab: NodeSlab<V>,
+    slab: NodeSlab<(K, V)>,
     list: LinkedList,
     map: HashMap<K, usize, S>
 }
@@ -25,10 +25,19 @@ where
         }
     }
 
+    pub fn with_capacity(cap: usize) -> LinkedHashMap<K, V> {
+        LinkedHashMap {
+            slab: NodeSlab::with_capacity(cap),
+            list: LinkedList::new(),
+            map: HashMap::with_capacity(cap)
+        }
+    }
+
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
-        let index = self.list.push(&mut self.slab, value);
+        let index = self.list.push(&mut self.slab, (key.clone(), value));
         let index = self.map.insert(key, index)?;
-        self.list.remove(&mut self.slab, index)
+        let (_, value) = self.list.remove(&mut self.slab, index)?;
+        Some(value)
     }
 
     pub fn get<Q>(&mut self, key: &Q) -> Option<&V>
@@ -37,16 +46,18 @@ where
         Q: Hash + Eq
     {
         let index = *self.map.get(key)?;
-        self.slab.get(index)
+        let (_, value) = self.slab.get(index)?;
+        Some(value)
     }
 
-    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
         Q: Hash + Eq
     {
         let index = *self.map.get(key)?;
-        self.slab.get_mut(index)
+        let (_, value) = self.slab.get_mut(index)?;
+        Some(value)
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
@@ -55,6 +66,19 @@ where
         Q: Hash + Eq
     {
         let index = self.map.remove(key)?;
-        self.list.remove(&mut self.slab, index)
+        let (_, value) = self.list.remove(&mut self.slab, index)?;
+        Some(value)
+    }
+
+    pub fn pop_front(&mut self) -> Option<(K, V)> {
+        let (k, v) = self.list.pop_front(&mut self.slab)?;
+        self.map.remove(&k)?;
+        Some((k, v))
+    }
+
+    pub fn pop_last(&mut self) -> Option<(K, V)> {
+        let (k, v) = self.list.pop_last(&mut self.slab)?;
+        self.map.remove(&k)?;
+        Some((k, v))
     }
 }

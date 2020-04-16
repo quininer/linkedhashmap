@@ -1,13 +1,16 @@
 use slab::Slab;
 
 
+#[derive(Debug)]
 pub struct NodeSlab<T>(pub(crate) Slab<Node<T>>);
 
+#[derive(Debug)]
 pub struct LinkedList {
     start: Option<usize>,
     end: Option<usize>
 }
 
+#[derive(Debug)]
 pub struct Node<T> {
     pub(crate) value: T,
     prev: Option<usize>,
@@ -34,30 +37,78 @@ impl LinkedList {
             self.start = Some(index);
             index
         } else {
+            let prev = self.end.or(self.start);
+
             let node = Node {
-                value,
-                prev: self.end,
+                value, prev,
                 next: None
             };
 
             let index = slab.insert(node);
             self.end = Some(index);
+
+            if let Some(prev) = prev {
+                let node = &mut slab[prev];
+                assert!(node.next.is_none());
+                node.next = Some(index);
+            }
+
             index
         }
     }
 
-    pub fn pop<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
+    pub fn pop_front<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
+        let index = self.start.take()?;
+        let node = slab.remove(index);
+
+        assert!(node.prev.is_none());
+
+        self.start = if node.next == self.end {
+            self.end.take()
+        } else {
+            node.next
+        };
+
+        if let Some(index) = self.start {
+            slab[index].prev.take();
+        }
+
+        Some(node.value)
+    }
+
+    pub fn pop_last<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
         if let Some(index) = self.end.take() {
             let node = slab.remove(index);
-            self.end = node.prev;
+
+            assert!(node.next.is_none());
+
+            if let Some(index) = node.prev {
+                slab[index].next.take();
+            }
+
+            if self.start != node.prev {
+                self.end = node.prev;
+            }
+
             Some(node.value)
         } else {
-            Some(slab.remove(self.start.take()?).value)
+            let index = self.start.take()?;
+            let node = slab.remove(index);
+
+            assert!(node.prev.is_none());
+            assert!(node.next.is_none());
+
+            Some(node.value)
         }
     }
 
     pub fn remove<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>, index: usize) -> Option<T> {
-        let node = slab.remove(index);
+        let node = if slab.contains(index) {
+            // why not return Option :(
+            slab.remove(index)
+        } else {
+            return None
+        };
 
         if let Some(prev) = node.prev {
             slab[prev].next = node.next;
@@ -80,6 +131,10 @@ impl<T> NodeSlab<T> {
         NodeSlab(Slab::new())
     }
 
+    pub fn with_capacity(cap: usize) -> NodeSlab<T> {
+        NodeSlab(Slab::with_capacity(cap))
+    }
+
     pub fn get(&self, index: usize) -> Option<&T> {
         Some(&self.0.get(index)?.value)
     }
@@ -87,4 +142,60 @@ impl<T> NodeSlab<T> {
     pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
         Some(&mut self.0.get_mut(index)?.value)
     }
+}
+
+
+#[test]
+fn test_linkedlist() {
+    let mut slab = NodeSlab::new();
+    let mut list = LinkedList::new();
+
+    list.push(&mut slab, 0);
+    assert_eq!(Some(0), list.pop_front(&mut slab));
+    assert_eq!(None, list.pop_front(&mut slab));
+
+    list.push(&mut slab, 1);
+    assert_eq!(Some(1), list.pop_last(&mut slab));
+    assert_eq!(None, list.pop_last(&mut slab));
+
+    list.push(&mut slab, 2);
+    list.push(&mut slab, 3);
+    dbg!(&list);
+    assert_eq!(Some(2), list.pop_front(&mut slab));
+    assert_eq!(Some(3), list.pop_last(&mut slab));
+    assert_eq!(None, list.pop_front(&mut slab));
+    assert_eq!(None, list.pop_last(&mut slab));
+
+    list.push(&mut slab, 4);
+    list.push(&mut slab, 5);
+    assert_eq!(Some(5), list.pop_last(&mut slab));
+    assert_eq!(Some(4), list.pop_front(&mut slab));
+    assert_eq!(None, list.pop_last(&mut slab));
+    assert_eq!(None, list.pop_front(&mut slab));
+
+    let index6 = list.push(&mut slab, 6);
+    let index7 = list.push(&mut slab, 7);
+    let index8 = list.push(&mut slab, 8);
+    assert_eq!(Some(7), list.remove(&mut slab, index7));
+    assert_eq!(None, list.remove(&mut slab, index7));
+    assert_eq!(Some(&6), slab.get(index6));
+    assert_eq!(Some(&8), slab.get(index8));
+    assert_eq!(Some(6), list.pop_front(&mut slab));
+    assert_eq!(Some(8), list.pop_front(&mut slab));
+
+    for i in 0..32 {
+        list.push(&mut slab, i);
+    }
+    for i in 0..32 {
+        assert_eq!(Some(i), list.pop_front(&mut slab));
+    }
+    assert_eq!(None, list.pop_front(&mut slab));
+
+    for i in 0..32 {
+        list.push(&mut slab, i);
+    }
+    for i in (0..32).rev() {
+        assert_eq!(Some(i), list.pop_last(&mut slab));
+    }
+    assert_eq!(None, list.pop_last(&mut slab));
 }
