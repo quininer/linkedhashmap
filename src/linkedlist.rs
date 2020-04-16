@@ -170,6 +170,18 @@ impl<T> NodeSlab<T> {
     pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
         Some(&mut self.0.get_mut(index)?.value)
     }
+
+    pub fn reserve(&mut self, additional: usize) {
+        self.0.reserve(additional);
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.0.shrink_to_fit();
+    }
+
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
 }
 
 

@@ -12,10 +12,9 @@ pub struct LinkedHashMap<K, V, S = RandomState> {
     map: HashMap<K, usize, S>
 }
 
-impl<K, V, S> LinkedHashMap<K, V, S>
+impl<K, V> LinkedHashMap<K, V>
 where
     K: Hash + Eq + Clone,
-    S: BuildHasher
 {
     pub fn new() -> LinkedHashMap<K, V> {
         LinkedHashMap {
@@ -31,6 +30,48 @@ where
             list: LinkedList::new(),
             map: HashMap::with_capacity(cap)
         }
+    }
+}
+
+impl<K, V, S> LinkedHashMap<K, V, S>
+where
+    K: Hash + Eq + Clone,
+    S: BuildHasher
+{
+    pub fn with_hasher(hash_builder: S) -> Self {
+        LinkedHashMap {
+            slab: NodeSlab::new(),
+            list: LinkedList::new(),
+            map: HashMap::with_hasher(hash_builder)
+        }
+    }
+
+    pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Self {
+        LinkedHashMap {
+            slab: NodeSlab::with_capacity(capacity),
+            list: LinkedList::new(),
+            map: HashMap::with_capacity_and_hasher(capacity, hash_builder)
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    pub fn reserve(&mut self, additional: usize) {
+        self.slab.reserve(additional);
+        self.map.reserve(additional);
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.slab.shrink_to_fit();
+        self.map.shrink_to_fit();
+    }
+
+    pub fn clear(&mut self) {
+        self.slab.clear();
+        self.list = LinkedList::new();
+        self.map.clear();
     }
 
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {

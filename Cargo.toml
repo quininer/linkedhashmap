@@ -8,3 +8,12 @@ edition = "2018"
 
 [dependencies]
 slab = "0.4"
+
+[dev-dependencies]
+criterion = "0.3"
+hashlink = "0.5"
+linked-hash-map = "0.5"
+
+[[bench]]
+name = "lru"
+harness = false
