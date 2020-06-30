@@ -94,6 +94,7 @@ where
         self.map.clear();
     }
 
+    #[inline]
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         let index = self.list.push(&mut self.slab, (key.clone(), value));
         let index = self.map.insert(key, index)?;
@@ -101,6 +102,7 @@ where
         Some(value)
     }
 
+    #[inline]
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
@@ -111,6 +113,7 @@ where
         Some(value)
     }
 
+    #[inline]
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
@@ -121,6 +124,7 @@ where
         Some(value)
     }
 
+    #[inline]
     pub fn touch<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
@@ -131,6 +135,7 @@ where
         Some(value)
     }
 
+    #[inline]
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
@@ -141,12 +146,14 @@ where
         Some(value)
     }
 
+    #[inline]
     pub fn pop_front(&mut self) -> Option<(K, V)> {
         let (k, v) = self.list.pop_front(&mut self.slab)?;
         self.map.remove(&k)?;
         Some((k, v))
     }
 
+    #[inline]
     pub fn pop_last(&mut self) -> Option<(K, V)> {
         let (k, v) = self.list.pop_last(&mut self.slab)?;
         self.map.remove(&k)?;
