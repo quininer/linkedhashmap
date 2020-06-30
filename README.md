@@ -2,13 +2,30 @@
 
 but 0-unsafe code. :)
 
+# benchmarks
+
+## default
+
 ```
-linkedhashmap           time:   [75.412 ns 76.001 ns 76.677 ns]
-                        change: [+0.2189% +3.3294% +6.2092%] (p = 0.03 < 0.05)
+linkedhashmap           time:   [88.299 ns 89.096 ns 89.886 ns]
+                        change: [-4.3828% -2.6982% -1.0684%] (p = 0.00 < 0.05)
 
-hashlink                time:   [35.210 ns 37.044 ns 38.874 ns]
-                        change: [-6.1209% -1.3098% +3.4307%] (p = 0.59 > 0.05)
+hashlink                time:   [59.497 ns 60.937 ns 62.916 ns]
+                        change: [-3.4227% -0.9224% +1.7368%] (p = 0.51 > 0.05)
 
-linked-hash-map         time:   [94.711 ns 95.942 ns 97.134 ns]
-                        change: [-3.1794% -1.2477% +0.7481%] (p = 0.23 > 0.05)
+linked-hash-map         time:   [94.379 ns 95.305 ns 96.309 ns]
+                        change: [-0.7721% +0.6709% +2.0113%] (p = 0.37 > 0.05)
+```
+
+## inline-more feature
+
+```
+linkedhashmap           time:   [59.607 ns 60.291 ns 61.013 ns]
+                        change: [+1.4918% +3.2842% +4.9448%] (p = 0.00 < 0.05)
+
+hashlink                time:   [60.300 ns 60.895 ns 61.492 ns]
+                        change: [+2.7329% +4.4155% +6.0299%] (p = 0.00 < 0.05)
+
+linked-hash-map         time:   [96.841 ns 99.359 ns 102.60 ns]
+                        change: [+2.1387% +4.0285% +6.2305%] (p = 0.00 < 0.05)
 ```

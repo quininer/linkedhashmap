@@ -24,6 +24,7 @@ impl LinkedList {
         }
     }
 
+    #[cfg_attr(feature = "inline-more", inline(always))]
     pub fn push<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>, value: T) -> usize {
         let index = slab.insert(Node {
             value,
@@ -40,6 +41,7 @@ impl LinkedList {
         index
     }
 
+    #[cfg_attr(feature = "inline-more", inline(always))]
     pub fn pop_front<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
         let index = self.start?;
         let node = slab.remove(index);
@@ -59,6 +61,7 @@ impl LinkedList {
         Some(node.value)
     }
 
+    #[cfg_attr(feature = "inline-more", inline(always))]
     pub fn pop_last<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
         let index = self.end?;
         let node = slab.remove(index);
@@ -78,6 +81,7 @@ impl LinkedList {
         Some(node.value)
     }
 
+    #[cfg_attr(feature = "inline-more", inline(always))]
     pub fn touch<'a, T>(&mut self, NodeSlab(slab): &'a mut NodeSlab<T>, index: usize) -> Option<&'a mut T> {
         let (node_prev, node_next) = {
             let node = slab.get(index)?;
@@ -108,6 +112,7 @@ impl LinkedList {
         Some(&mut node.value)
     }
 
+    #[cfg_attr(feature = "inline-more", inline(always))]
     pub fn remove<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>, index: usize) -> Option<T> {
         let node = if slab.contains(index) {
             // why not return Option :(
