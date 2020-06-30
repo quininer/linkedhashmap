@@ -1,15 +1,16 @@
+use std::collections::hash_map;
 use criterion::{ criterion_main, criterion_group, Criterion, black_box };
 
 
 struct Bar([u64; 4]);
 
-const CAP: usize = 1024;
+const CAP: usize = 128;
 
 fn bench_linkedhsahmap(c: &mut Criterion) {
     use linkedhashmap::LinkedHashMap;
 
     c.bench_function("linkedhashmap", |b| {
-        let mut map = LinkedHashMap::with_capacity(CAP);
+        let mut map = LinkedHashMap::with_capacity_and_hasher(CAP, hash_map::RandomState::new());
         let mut count = 0;
 
         b.iter(|| {
@@ -27,7 +28,7 @@ fn bench_hashlink(c: &mut Criterion) {
     use hashlink::LinkedHashMap;
 
     c.bench_function("hashlink", |b| {
-        let mut map = LinkedHashMap::with_capacity(CAP);
+        let mut map = LinkedHashMap::with_capacity_and_hasher(CAP, hash_map::RandomState::new());
         let mut count = 0;
 
         b.iter(|| {
@@ -45,7 +46,7 @@ fn bench_linked_hash_map(c: &mut Criterion) {
     use linked_hash_map::LinkedHashMap;
 
     c.bench_function("linked-hash-map", |b| {
-        let mut map = LinkedHashMap::with_capacity(CAP);
+        let mut map = LinkedHashMap::with_capacity_and_hasher(CAP, hash_map::RandomState::new());
         let mut count = 0;
 
         b.iter(|| {

@@ -4,7 +4,7 @@ use slab::Slab;
 #[derive(Default)]
 pub struct NodeSlab<T>(Slab<Node<T>>);
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LinkedList {
     start: Option<usize>,
     end: Option<usize>
@@ -25,35 +25,19 @@ impl LinkedList {
     }
 
     pub fn push<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>, value: T) -> usize {
-        if self.start.is_none() {
-            let node = Node {
-                value,
-                prev: None,
-                next: None
-            };
+        let index = slab.insert(Node {
+            value,
+            prev: self.end.or(self.start),
+            next: None
+        });
 
-            let index = slab.insert(node);
-            self.start = Some(index);
-            index
+        if let Some(old_end) = self.end.replace(index) {
+            slab[old_end].next = Some(index);
         } else {
-            let prev = self.end.or(self.start);
-
-            let node = Node {
-                value, prev,
-                next: None
-            };
-
-            let index = slab.insert(node);
-            self.end = Some(index);
-
-            if let Some(prev) = prev {
-                let node = &mut slab[prev];
-                debug_assert!(node.next.is_none());
-                node.next = Some(index);
-            }
-
-            index
+            self.start = Some(index);
         }
+
+        index
     }
 
     pub fn pop_front<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
@@ -62,43 +46,36 @@ impl LinkedList {
 
         debug_assert!(node.prev.is_none());
 
-        self.start = if node.next == self.end {
-            self.end.take()
-        } else {
-            node.next
-        };
+        self.start = node.next;
 
         if let Some(index) = self.start {
             slab[index].prev.take();
+        }
+
+        if Some(index) == self.end {
+            self.end.take();
         }
 
         Some(node.value)
     }
 
     pub fn pop_last<T>(&mut self, NodeSlab(slab): &mut NodeSlab<T>) -> Option<T> {
-        if let Some(index) = self.end.take() {
-            let node = slab.remove(index);
+        let index = self.end?;
+        let node = slab.remove(index);
 
-            debug_assert!(node.next.is_none());
+        debug_assert!(node.next.is_none());
 
-            if let Some(index) = node.prev {
-                slab[index].next.take();
-            }
+        self.end = node.prev;
 
-            if self.start != node.prev {
-                self.end = node.prev;
-            }
-
-            Some(node.value)
-        } else {
-            let index = self.start.take()?;
-            let node = slab.remove(index);
-
-            debug_assert!(node.prev.is_none());
-            debug_assert!(node.next.is_none());
-
-            Some(node.value)
+        if let Some(index) = self.end {
+            slab[index].next.take();
         }
+
+        if Some(index) == self.start {
+            self.start.take();
+        }
+
+        Some(node.value)
     }
 
     pub fn touch<'a, T>(&mut self, NodeSlab(slab): &'a mut NodeSlab<T>, index: usize) -> Option<&'a mut T> {
@@ -110,6 +87,8 @@ impl LinkedList {
         if let Some(next) = node_next {
             slab[next].prev = node_prev;
         } else {
+            debug_assert_eq!(Some(index), self.end);
+
             return Some(&mut slab[index].value);
         }
 
@@ -208,7 +187,9 @@ fn test_linkedlist() {
     list.push(&mut slab, 3);
     assert_eq!(Some(2), list.pop_front(&mut slab));
     assert_eq!(Some(3), list.pop_last(&mut slab));
+    eprintln!("{:?}", list);
     assert_eq!(None, list.pop_front(&mut slab));
+    eprintln!("{:?}", list);
     assert_eq!(None, list.pop_last(&mut slab));
 
     list.push(&mut slab, 4);

@@ -8,6 +8,8 @@ edition = "2018"
 
 [dependencies]
 slab = "0.4"
+# hashbrown = { version = "0.7", default-features = false }
+# hashbrown = "0.7"
 
 [dev-dependencies]
 criterion = "0.3"
@@ -17,3 +19,6 @@ linked-hash-map = "0.5"
 [[bench]]
 name = "lru"
 harness = false
+
+[profile.release]
+debug = true
